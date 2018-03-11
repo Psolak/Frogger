@@ -1,3 +1,6 @@
+#!/usr/bin/env python2
+# coding: utf-8
+
 import pygame
 from pygame.locals import *
 from random import randint
@@ -11,7 +14,7 @@ class SheetInfos:
         self.CAR_RED = (73, 369, 71, 131)
         self.CAR_YELLOW = (146, 118, 71, 131)
         self.cars = [self.CAR_BLACK, self.CAR_BLUE, self.CAR_GREEN,
-                    self.CAR_RED, self.CAR_YELLOW]
+                     self.CAR_RED, self.CAR_YELLOW]
 
         self.MOTO_BLACK = (434, 389, 44, 100)
         self.MOTO_BLUE = (506, 133, 44, 100)
@@ -19,13 +22,14 @@ class SheetInfos:
         self.MOTO_RED = (290, 399, 44, 100)
         self.MOTO_YELLOW = (219, 133, 44, 100)
         self.motos = [self.MOTO_BLACK, self.MOTO_BLUE, self.MOTO_GREEN,
-                    self.MOTO_RED, self.MOTO_YELLOW]
+                      self.MOTO_RED, self.MOTO_YELLOW]
 
     def random_car(self):
         return self.cars[randint(0, len(self.cars) - 1)]
 
     def random_moto(self):
         return self.motos[randint(0, len(self.motos) - 1)]
+
 
 class Assets:
     def __init__(self):
@@ -48,6 +52,7 @@ class Assets:
         self.wood200_2 = pygame.image.load('wood200_2.bmp')
         self.water_sprite = pygame.image.load('water_sprite.bmp')
 
+
 class SpriteSheet:
     def __init__(self, file_name):
         self.sprite_sheet = pygame.image.load(file_name).convert()
@@ -57,6 +62,7 @@ class SpriteSheet:
         image.blit(self.sprite_sheet, (0, 0), (x, y, width, height))
         image.set_colorkey((0, 0, 0))
         return image
+
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, speedxr=0):
@@ -99,7 +105,6 @@ class Player(pygame.sprite.Sprite):
         elif self.k and self.rect.y < 500:
             self.score += 1
 
-
         self.rect.x += self.speedx + speedxr
 
         if self.rect.right > 1000:
@@ -131,6 +136,7 @@ class Rondin(pygame.sprite.Sprite):
     def update(self):
         self.rect.x += self.speedx
 
+
 class Car(pygame.sprite.Sprite):
     def __init__(self, assets, x):
 
@@ -153,9 +159,9 @@ class Car(pygame.sprite.Sprite):
         self.rect.x += self.speedx
         self.rect.y += self.speedy
 
+
 class Moto(pygame.sprite.Sprite):
     def __init__(self, assets, x):
-
         pygame.sprite.Sprite.__init__(self)
         sprite_sheet = SpriteSheet('spritesheet_vehicles.png')
         sheet_infos = SheetInfos()
@@ -175,9 +181,9 @@ class Moto(pygame.sprite.Sprite):
         self.rect.x += self.speedx
         self.rect.y += self.speedy
 
+
 class Water(pygame.sprite.Sprite):
     def __init__(self, assets, x):
-
         pygame.sprite.Sprite.__init__(self)
         self.image = assets.water_sprite.convert()
         self.image.set_colorkey((255, 255, 255))
@@ -190,19 +196,20 @@ class Water(pygame.sprite.Sprite):
 
 class Background:
     def __init__(self, assets, screen, decors):
-
         self.update(assets, screen, decors)
 
     def update(self, assets, screen, decors):
-
-        screen.fill((0,0,0))
+        screen.fill((0, 0, 0))
         for i in range(7):
             screen.blit(decors[i], (0, 600 - (i * 100)))
 
+
 class Decors:
     def __init__(self, assets, all_sprites, WaterS):
-        self.decors = [assets.grass, assets.road1, assets.road2,  assets.road1, assets.road2, assets.water, assets.water2, assets.grass, assets.road1, assets.road2, assets.road1, assets.road2, assets.grass, assets.grass]
-        self.tiles = [assets.grass, assets.road1, assets.road2, assets.water, assets.water2]
+        self.decors = [assets.grass, assets.road1, assets.road2,  assets.road1, assets.road2, assets.water,
+                       assets.water2, assets.grass, assets.road1, assets.road2, assets.road1, assets.road2, assets.grass, assets.grass]
+        self.tiles = [assets.grass, assets.road1,
+                      assets.road2, assets.water, assets.water2]
         self.water_sprites = [(Water(assets, 600)), (Water(assets, 500))]
         all_sprites.add(self.water_sprites[0])
         WaterS.add(self.water_sprites[0])
@@ -218,13 +225,15 @@ class Decors:
 
         if self.decors[-1] == assets.water and self.decors[-2] != assets.water2:
             self.decors.append(assets.water2)
-            self.water_sprites.append(Water(assets, (len(self.decors) - 3) * 100))
+            self.water_sprites.append(
+                Water(assets, (len(self.decors) - 3) * 100))
             all_sprites.add(self.water_sprites[-1])
             WaterS.add(self.water_sprites[-1])
 
         elif self.decors[-1] == assets.water2 and self.decors[-2] != assets.water:
             self.decors.append(assets.water)
-            self.water_sprites.append(Water(assets, (len(self.decors) - 3) * 100))
+            self.water_sprites.append(
+                Water(assets, (len(self.decors) - 3) * 100))
             all_sprites.add(self.water_sprites[-1])
             WaterS.add(self.water_sprites[-1])
 
@@ -233,7 +242,6 @@ class Decors:
 
         elif self.decors[-1] == assets.road2 and self.decors[-2] != assets.road1:
             self.decors.append(assets.road1)
-
 
         else:
             if self.tiles[self.num] == assets.road1 and self.decors[-1] == assets.road1:
@@ -244,26 +252,29 @@ class Decors:
 
             elif self.tiles[self.num] == assets.water and self.decors[-1] == assets.water:
                 self.decors.append(assets.water2)
-                self.water_sprites.append(Water(assets, (len(self.decors) - 3) * 100))
+                self.water_sprites.append(
+                    Water(assets, (len(self.decors) - 3) * 100))
                 all_sprites.add(self.water_sprites[-1])
                 WaterS.add(self.water_sprites[-1])
 
             elif self.tiles[self.num] == assets.water2 and self.decors[-1] == assets.water2:
                 self.decors.append(assets.water)
-                self.water_sprites.append(Water(assets, (len(self.decors) - 3) * 100))
+                self.water_sprites.append(
+                    Water(assets, (len(self.decors) - 3) * 100))
                 all_sprites.add(self.water_sprites[-1])
                 WaterS.add(self.water_sprites[-1])
 
             else:
                 self.decors.append(self.tiles[self.num])
 
-        if (len(self.water_sprites)) > 7:
+        if len(self.water_sprites) > 7:
             print self.water_sprites
             all_sprites.remove(self.water_sprites[0])
             WaterS.remove(self.water_sprites[0])
             del self.water_sprites[0]
 
         del self.decors[0]
+
 
 class Generate:
     def __init__(self, assets, dec, vehicles, waterobjects, WaterS):
@@ -278,13 +289,15 @@ class Generate:
 
                 if randint(0, 250) == 0:
                     self.cars.append(Car(assets, self.t * 100))
-                    pygame.sprite.spritecollide(self.cars[-1], all_sprites, dokill=True)
+                    pygame.sprite.spritecollide(
+                        self.cars[-1], all_sprites, dokill=True)
                     all_sprites.add(self.cars[-1])
                     vehicles.add(self.cars[-1])
 
                 if randint(0, 250) == 0:
                     self.motos.append(Moto(assets, self.t * 100))
-                    pygame.sprite.spritecollide(self.motos[-1], all_sprites, dokill=True)
+                    pygame.sprite.spritecollide(
+                        self.motos[-1], all_sprites, dokill=True)
                     all_sprites.add(self.motos[-1])
                     vehicles.add(self.motos[-1])
 
@@ -292,14 +305,18 @@ class Generate:
 
                 if randint(0, 100) == 0:
                     if dec.decors[self.t] == assets.water:
-                        self.rondins.append(Rondin(assets, self.t * 100, 'left'))
-                        pygame.sprite.spritecollide(self.rondins[-1], all_sprites, dokill=True)
+                        self.rondins.append(
+                            Rondin(assets, self.t * 100, 'left'))
+                        pygame.sprite.spritecollide(
+                            self.rondins[-1], all_sprites, dokill=True)
                         all_sprites.add(self.rondins[-1])
                         waterobjects.add(self.rondins[-1])
 
                     elif dec.decors[self.t] == assets.water2:
-                        self.rondins.append(Rondin(assets, self.t * 100, 'right'))
-                        pygame.sprite.spritecollide(self.rondins[-1], all_sprites, dokill=True)
+                        self.rondins.append(
+                            Rondin(assets, self.t * 100, 'right'))
+                        pygame.sprite.spritecollide(
+                            self.rondins[-1], all_sprites, dokill=True)
                         all_sprites.add(self.rondins[-1])
                         waterobjects.add(self.rondins[-1])
 
@@ -364,7 +381,6 @@ def main():
     all_sprites.add(player)
     playerG.add(player)
 
-
     dead = []
 
     gen = Generate(assets, dec, vehicles, waterobjects, WaterS)
@@ -377,14 +393,13 @@ def main():
     deadW = pygame.sprite.spritecollide(player, WaterS, dokill=False)
 
     while True:
-
-
         bg = Background(assets, screen, dec.decors)
 
         move.update(player, gen, dec)
 
         dead = pygame.sprite.spritecollide(player, vehicles, dokill=False)
-        on_rondin = pygame.sprite.spritecollide(player, waterobjects, dokill=False)
+        on_rondin = pygame.sprite.spritecollide(
+            player, waterobjects, dokill=False)
 
         if player.rect.y < 500 and player.k and player.i:
             dec.update(assets, all_sprites, WaterS)
@@ -397,14 +412,12 @@ def main():
         else:
             speedxr = 0
             if pygame.time.get_ticks() - ti > 10:
-                deadW = pygame.sprite.spritecollide(player, WaterS, dokill=False)
-
+                deadW = pygame.sprite.spritecollide(
+                    player, WaterS, dokill=False)
 
         if dead or deadW:
             all_sprites.remove(player)
             playerG.remove(player)
-
-
 
         gen.update(assets, dec, vehicles, all_sprites, waterobjects, WaterS)
         all_sprites.update()
@@ -413,6 +426,7 @@ def main():
 
         pygame.display.update()
         clock.tick(60)
+
 
 if __name__ == '__main__':
     main()
