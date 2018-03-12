@@ -189,15 +189,17 @@ class Water(pygame.sprite.Sprite):
 
 
 class Background:
-    def __init__(self, assets, screen, decors):
+    def __init__(self, assets, screen, decors, score):
 
-        self.update(assets, screen, decors)
+        self.update(assets, screen, decors, score)
 
-    def update(self, assets, screen, decors):
+    def update(self, assets, screen, decors, score):
 
         screen.fill((0,0,0))
         for i in range(7):
             screen.blit(decors[i], (0, 600 - (i * 100)))
+
+        screen.blit(score.scoreD,(0,0))
 
 class Decors:
     def __init__(self, assets, all_sprites, WaterS):
@@ -341,9 +343,21 @@ class Move:
             for self.w in dec.water_sprites:
                 self.w.rect.y += 100
 
+class Score:
+    def __init__(self, myfont):
+        self.score = 0
+        self.scoreD = myfont.render('Score: ' + '0', False, (0, 0, 0))
 
+    def update(self, player, myfont):
+        if player.score != self.score:
+            self.score = player.score
+            self.scoreD = myfont.render('Score: ' + str(self.score), False, (0, 0, 0))
+            
 def main():
     pygame.init()
+    pygame.font.init()
+    myfont = pygame.font.SysFont('Comic Sans MS', 30)
+    
     screen = pygame.display.set_mode((1000, 700))
 
     global speedxr
@@ -364,7 +378,8 @@ def main():
     all_sprites.add(player)
     playerG.add(player)
 
-
+    score = Score(myfont)
+    
     dead = []
 
     gen = Generate(assets, dec, vehicles, waterobjects, WaterS)
@@ -379,7 +394,7 @@ def main():
     while True:
 
 
-        bg = Background(assets, screen, dec.decors)
+        bg = Background(assets, screen, dec.decors, score)
 
         move.update(player, gen, dec)
 
@@ -388,7 +403,7 @@ def main():
 
         if player.rect.y < 500 and player.k and player.i:
             dec.update(assets, all_sprites, WaterS)
-            bg.update(assets, screen, dec.decors)
+            bg.update(assets, screen, dec.decors, score)
 
         if on_rondin:
             speedxr = on_rondin[0].speedx
@@ -405,12 +420,12 @@ def main():
             playerG.remove(player)
 
 
-
         gen.update(assets, dec, vehicles, all_sprites, waterobjects, WaterS)
         all_sprites.update()
         all_sprites.draw(screen)
         playerG.draw(screen)
-
+        score.update(player, myfont)
+        
         pygame.display.update()
         clock.tick(60)
 
