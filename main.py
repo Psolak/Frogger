@@ -260,7 +260,6 @@ class Decors:
                 self.decors.append(self.tiles[self.num])
 
         if (len(self.water_sprites)) > 7:
-            print self.water_sprites
             all_sprites.remove(self.water_sprites[0])
             WaterS.remove(self.water_sprites[0])
             del self.water_sprites[0]
@@ -357,6 +356,7 @@ def main():
     pygame.init()
     pygame.font.init()
     myfont = pygame.font.SysFont('Comic Sans MS', 30)
+    myfont2 = pygame.font.SysFont('Comic Sans MS', 60)
     
     screen = pygame.display.set_mode((1000, 700))
 
@@ -390,9 +390,9 @@ def main():
     ti = 0
 
     deadW = pygame.sprite.spritecollide(player, WaterS, dokill=False)
+    done = False
 
-    while True:
-
+    while not done:
 
         bg = Background(assets, screen, dec.decors, score)
 
@@ -418,6 +418,7 @@ def main():
         if dead or deadW:
             all_sprites.remove(player)
             playerG.remove(player)
+            done = True
 
 
         gen.update(assets, dec, vehicles, all_sprites, waterobjects, WaterS)
@@ -428,6 +429,27 @@ def main():
         
         pygame.display.update()
         clock.tick(60)
+
+        if done:
+            scoretxt = open('score.txt', 'r')
+            bestscore = scoretxt.readlines()[1]
+            print bestscore
+            scoretxt.close()
+
+            scoretxt = open('score.txt','w')
+            scoretxt.write(str(score.score)+'\n')
+            if player.score > int(bestscore):
+                scoretxt.write(str(score.score))
+            else:
+                scoretxt.write(str(int(bestscore)))
+            scoretxt.close()
+            
+            screen.blit(myfont2.render('GAME OVER', False, (255, 0, 0)), (250, 250))
+            pygame.display.update()
+            while True:  
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        execfile('menu.py')
 
 if __name__ == '__main__':
     main()
