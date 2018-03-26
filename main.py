@@ -109,7 +109,6 @@ class Player(pygame.sprite.Sprite):
         if self.rect.bottom > 700 - 20:
             self.rect.bottom = 700 - 20
 
-
 class Rondin(pygame.sprite.Sprite):
     def __init__(self, assets, x, position):
 
@@ -187,7 +186,6 @@ class Water(pygame.sprite.Sprite):
         self.speedx = 0
         self.speedy = 0
 
-
 class Background:
     def __init__(self, assets, screen, decors, score):
 
@@ -202,10 +200,11 @@ class Background:
         screen.blit(score.scoreD,(0,0))
 
 class Decors:
-    def __init__(self, assets, all_sprites, WaterS):
-        self.decors = [assets.grass, assets.road1, assets.road2,  assets.road1, assets.road2, assets.water, assets.water2, assets.grass, assets.road1, assets.road2, assets.road1, assets.road2, assets.grass, assets.grass]
+    def __init__(self, assets, all_sprites, WaterS, boosts):
+        self.decors = [assets.grass, assets.grass, assets.grass,  assets.road1, assets.road2, assets.water, assets.water2, assets.grass, assets.road1, assets.road2, assets.road1, assets.road2, assets.grass, assets.grass]
         self.tiles = [assets.grass, assets.road1, assets.road2, assets.water, assets.water2]
         self.water_sprites = [(Water(assets, 600)), (Water(assets, 500))]
+        self.boosts = []
         all_sprites.add(self.water_sprites[0])
         WaterS.add(self.water_sprites[0])
 
@@ -214,7 +213,7 @@ class Decors:
 
         self.num = 0
 
-    def update(self, assets, all_sprites, WaterS):
+    def update(self, assets, all_sprites, WaterS, boosts):
 
         self.num = randint(0, 4)
 
@@ -264,6 +263,11 @@ class Decors:
             WaterS.remove(self.water_sprites[0])
             del self.water_sprites[0]
 
+        if self.decors[-1] == assets.grass:
+            self.boosts.append(Boost(assets, randint(0, 100) * 10, ((len(self.decors) - 1) * 100) - 50))
+            all_sprites.add(self.boosts[-1])
+            boosts.add(self.boosts[-1])
+
         del self.decors[0]
 
 class Generate:
@@ -288,6 +292,7 @@ class Generate:
                     pygame.sprite.spritecollide(self.motos[-1], all_sprites, dokill=True)
                     all_sprites.add(self.motos[-1])
                     vehicles.add(self.motos[-1])
+
 
             elif dec.decors[self.t] == assets.water or dec.decors[self.t] == assets.water2:
 
@@ -322,13 +327,13 @@ class Generate:
                     waterobjects.remove(self.rondin)
                     all_sprites.remove(self.rondin)
 
-
 class Move:
     def __init__(self, player, gen, dec):
         self.m = ''
         self.c = ''
         self.r = ''
         self.w = ''
+        self.b = ''
 
     def update(self, player, gen, dec):
 
@@ -341,6 +346,8 @@ class Move:
                 self.r.rect.y += 100
             for self.w in dec.water_sprites:
                 self.w.rect.y += 100
+            for self.b in dec.boosts:
+                self.b.rect.y += 100
 
 class Score:
     def __init__(self, myfont):
@@ -348,16 +355,30 @@ class Score:
         self.scoreD = myfont.render('Score: ' + '0', False, (0, 0, 0))
 
     def update(self, player, myfont):
+
         if player.score != self.score:
             self.score = player.score
             self.scoreD = myfont.render('Score: ' + str(self.score), False, (0, 0, 0))
-            
+
+class Boost(pygame.sprite.Sprite):
+    def __init__(self, assets, x, y, boost=None):
+
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((30, 30))
+        self.image.fill((255, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = 15 + x
+        self.rect.bottom = 700 - y
+        self.speedx = 0
+        self.speedy = 0
+
+
 def main():
     pygame.init()
     pygame.font.init()
     myfont = pygame.font.SysFont('Comic Sans MS', 30)
     myfont2 = pygame.font.SysFont('Comic Sans MS', 60)
-    
+
     screen = pygame.display.set_mode((1000, 700))
 
     global speedxr
@@ -370,8 +391,9 @@ def main():
     WaterS = pygame.sprite.Group()
     waterobjects = pygame.sprite.Group()
     vehicles = pygame.sprite.Group()
+    boosts = pygame.sprite.Group()
 
-    dec = Decors(assets, all_sprites, WaterS)
+    dec = Decors(assets, all_sprites, WaterS, boosts)
 
     playerG = pygame.sprite.Group()
     player = Player()
@@ -379,7 +401,7 @@ def main():
     playerG.add(player)
 
     score = Score(myfont)
-    
+
     dead = []
 
     gen = Generate(assets, dec, vehicles, waterobjects, WaterS)
@@ -400,10 +422,15 @@ def main():
 
         dead = pygame.sprite.spritecollide(player, vehicles, dokill=False)
         on_rondin = pygame.sprite.spritecollide(player, waterobjects, dokill=False)
+        boosted = pygame.sprite.spritecollide(player, boosts, dokill=True)
 
         if player.rect.y < 500 and player.k and player.i:
-            dec.update(assets, all_sprites, WaterS)
+            dec.update(assets, all_sprites, WaterS, boosts)
             bg.update(assets, screen, dec.decors, score)
+
+        if boosted:
+            player.score += 5
+            boosted = []
 
         if on_rondin:
             speedxr = on_rondin[0].speedx
@@ -426,7 +453,7 @@ def main():
         all_sprites.draw(screen)
         playerG.draw(screen)
         score.update(player, myfont)
-        
+
         pygame.display.update()
         clock.tick(60)
 
@@ -443,13 +470,14 @@ def main():
             else:
                 scoretxt.write(str(int(bestscore)))
             scoretxt.close()
-            
+
             screen.blit(myfont2.render('GAME OVER', False, (255, 0, 0)), (250, 250))
             pygame.display.update()
-            while True:  
+            while True:
                 for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
                         execfile('menu.py')
+
 
 if __name__ == '__main__':
     main()
