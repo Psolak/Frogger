@@ -59,7 +59,7 @@ class SpriteSheet:
         return image
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, speedxr=0):
+    def __init__(self, speedxRondins=0):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((60, 60))
         self.image.fill((255, 0, 255))
@@ -67,40 +67,42 @@ class Player(pygame.sprite.Sprite):
         self.rect.centerx = 1000 / 2
         self.rect.bottom = 700 - 20
         self.speedy = 0
-        self.k = False
+        self.Up = False
+        self.Down = True
         self.score = 0
+        self.invincible = False
 
     def update(self):
         self.speedx = 0
         self.speedy = 0
-        self.k = False
-        self.i = True
+        self.Up = False
+        self.Down = True
 
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
+                self.invincible = False
                 if event.key == pygame.K_LEFT:
                     self.speedx = -100
                 if event.key == pygame.K_RIGHT:
                     self.speedx = 100
                 if event.key == pygame.K_UP:
                     self.speedy = -100
-                    self.k = True
+                    self.Up = True
                 if event.key == pygame.K_DOWN:
                     self.speedy = 100
 
         if self.speedy > 0:
             self.rect.y += self.speedy
-            self.i = True
+            self.Down = True
 
-        if self.k and self.rect.y >= 500:
+        if self.Up and self.rect.y >= 500:
             self.rect.y += self.speedy
-            self.i = False
+            self.Down = False
 
-        elif self.k and self.rect.y < 500:
+        elif self.Up and self.rect.y < 500:
             self.score += 1
 
-
-        self.rect.x += self.speedx + speedxr
+        self.rect.x += self.speedx + speedxRondins
 
         if self.rect.right > 1000:
             self.rect.right = 1000 - 20
@@ -108,6 +110,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.left = 20
         if self.rect.bottom > 700 - 20:
             self.rect.bottom = 700 - 20
+
 
 class Rondin(pygame.sprite.Sprite):
     def __init__(self, assets, x, position):
@@ -125,6 +128,7 @@ class Rondin(pygame.sprite.Sprite):
         elif position == 'left':
             self.rect.centerx = 1300
             self.speedx = -5
+
         self.speedy = 0
 
     def update(self):
@@ -187,17 +191,20 @@ class Water(pygame.sprite.Sprite):
         self.speedy = 0
 
 class Background:
-    def __init__(self, assets, screen, decors, score):
+    def __init__(self, assets, screen, decors, score, player):
 
-        self.update(assets, screen, decors, score)
+        self.update(assets, screen, decors, score, player)
 
-    def update(self, assets, screen, decors, score):
+    def update(self, assets, screen, decors, score, player):
 
         screen.fill((0,0,0))
         for i in range(7):
             screen.blit(decors[i], (0, 600 - (i * 100)))
 
         screen.blit(score.scoreD,(0,0))
+
+        if player.invincible:
+            screen.blit(score.invin,(350,0))
 
 class Decors:
     def __init__(self, assets, all_sprites, WaterS, boosts):
@@ -281,13 +288,13 @@ class Generate:
         for self.t in range(len(dec.decors)):
             if dec.decors[self.t] == assets.road1 or dec.decors[self.t] == assets.road2:
 
-                if randint(0, 250) == 0:
+                if randint(0, 1000) == 0:
                     self.cars.append(Car(assets, self.t * 100))
                     pygame.sprite.spritecollide(self.cars[-1], all_sprites, dokill=True)
                     all_sprites.add(self.cars[-1])
                     vehicles.add(self.cars[-1])
 
-                if randint(0, 250) == 0:
+                if randint(0, 1000) == 0:
                     self.motos.append(Moto(assets, self.t * 100))
                     pygame.sprite.spritecollide(self.motos[-1], all_sprites, dokill=True)
                     all_sprites.add(self.motos[-1])
@@ -335,9 +342,9 @@ class Move:
         self.w = ''
         self.b = ''
 
-    def update(self, player, gen, dec):
+    def update(self, player, gen, dec, boo=0):
 
-        if player.k and player.rect.y <= 500 and player.i:
+        if player.Up and player.rect.y <= 500 and player.Down or boo==1:
             for self.c in gen.cars:
                 self.c.rect.y += 100
             for self.m in gen.motos:
@@ -352,13 +359,17 @@ class Move:
 class Score:
     def __init__(self, myfont):
         self.score = 0
-        self.scoreD = myfont.render('Score: ' + '0', False, (0, 0, 0))
+        self.scoreD = myfont.render('0', False, (0, 255, 0))
 
     def update(self, player, myfont):
 
         if player.score != self.score:
             self.score = player.score
-            self.scoreD = myfont.render('Score: ' + str(self.score), False, (0, 0, 0))
+            self.scoreD = myfont.render(str(self.score), False, (0, 255, 0))
+
+        if player.invincible:
+            self.invin = myfont.render('Invincible', False, (255, 0, 0))
+
 
 class Boost(pygame.sprite.Sprite):
     def __init__(self, assets, x, y, boost=None):
@@ -376,13 +387,13 @@ class Boost(pygame.sprite.Sprite):
 def main():
     pygame.init()
     pygame.font.init()
-    myfont = pygame.font.SysFont('Comic Sans MS', 30)
-    myfont2 = pygame.font.SysFont('Comic Sans MS', 60)
+    myfont = pygame.font.SysFont('liberationsans', 90)
+    myfont2 = pygame.font.SysFont('liberationsans', 60)
 
     screen = pygame.display.set_mode((1000, 700))
 
-    global speedxr
-    speedxr = 0
+    global speedxRondins
+    speedxRondins = 0
 
     assets = Assets()
     assets.load_assets()
@@ -416,7 +427,7 @@ def main():
 
     while not done:
 
-        bg = Background(assets, screen, dec.decors, score)
+        bg = Background(assets, screen, dec.decors, score, player)
 
         move.update(player, gen, dec)
 
@@ -424,28 +435,45 @@ def main():
         on_rondin = pygame.sprite.spritecollide(player, waterobjects, dokill=False)
         boosted = pygame.sprite.spritecollide(player, boosts, dokill=True)
 
-        if player.rect.y < 500 and player.k and player.i:
+        if player.rect.y < 500 and player.Up and player.Down:
             dec.update(assets, all_sprites, WaterS, boosts)
-            bg.update(assets, screen, dec.decors, score)
-
-        if boosted:
-            player.score += 5
-            boosted = []
+            bg.update(assets, screen, dec.decors, score, player)
 
         if on_rondin:
-            speedxr = on_rondin[0].speedx
+            speedxRondins = on_rondin[0].speedx
             ti = pygame.time.get_ticks()
 
         else:
-            speedxr = 0
+            speedxRondins = 0
             if pygame.time.get_ticks() - ti > 10:
                 deadW = pygame.sprite.spritecollide(player, WaterS, dokill=False)
+                on_rondin = []
+
+        if boosted:
+            if player.rect.y == 620:
+                z = 3
+                player.rect.y -= 200
+            elif player.rect.y == 520:
+                z = 4
+                player.rect.y -= 100
+            elif player.rect.y == 420:
+                z = 5
+            else:
+                z = 5
+
+            for i in range(z):
+                move.update(player, gen, dec, 1)
+                dec.update(assets, all_sprites, WaterS, boosts)
+                bg.update(assets, screen, dec.decors, score, player)
+            boosted = []
+            player.invincible = True
 
 
         if dead or deadW:
-            all_sprites.remove(player)
-            playerG.remove(player)
-            done = True
+            if player.invincible == False:
+                all_sprites.remove(player)
+                playerG.remove(player)
+                done = True
 
 
         gen.update(assets, dec, vehicles, all_sprites, waterobjects, WaterS)
@@ -471,7 +499,7 @@ def main():
                 scoretxt.write(str(int(bestscore)))
             scoretxt.close()
 
-            screen.blit(myfont2.render('GAME OVER', False, (255, 0, 0)), (250, 250))
+            screen.blit(myfont2.render('GAME OVER', False, (255, 0, 0)), (300, 300))
             pygame.display.update()
             while True:
                 for event in pygame.event.get():
