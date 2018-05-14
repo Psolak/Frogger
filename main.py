@@ -1,6 +1,9 @@
 import pygame
+import random
 from pygame.locals import *
 from random import randint
+pygame.init()
+pygame.font.init()
 
 
 class SheetInfos:
@@ -37,8 +40,19 @@ class Assets:
         self.wood200 = ""
         self.wood200_2 = ""
         self.water_sprite = ""
+        self.go1 = ""
+        self.go2 = ""
+        self.pepe_die1 = ""
+        self.pepe_die2 = ""
+        self.pepe_die3 = ""
+        self.theme_sound = ""
+        self.myfont = ""
+        self.myfont2 = ""
+        self.gameover_sound = ""
+        self.boost_sound = ""
 
     def load_assets(self):
+
         self.road1 = pygame.image.load('road1.bmp')
         self.road2 = pygame.image.load('road2.bmp')
         self.grass = pygame.image.load('grass.bmp')
@@ -47,6 +61,15 @@ class Assets:
         self.wood200 = pygame.image.load('wood200.bmp')
         self.wood200_2 = pygame.image.load('wood200_2.bmp')
         self.water_sprite = pygame.image.load('water_sprite.bmp')
+        self.pepe_die1 = pygame.image.load('pepe_go.jpg')
+        self.pepe_die2 = pygame.image.load('pepe_fork.jpg')
+        self.pepe_die3 = pygame.image.load('pepe_gun.jpg')
+        self.gameover_sound = pygame.mixer.Sound('Game_Over.wav')
+        self.theme_sound = pygame.mixer.Sound('theme_sound.wav')
+        self.myfont = pygame.font.SysFont('liberationsans', 90)
+        self.myfont2 = pygame.font.SysFont('liberationsans', 60)
+        self.boost_sound = pygame.mixer.Sound('boost.wav')
+
 
 class SpriteSheet:
     def __init__(self, file_name):
@@ -61,8 +84,10 @@ class SpriteSheet:
 class Player(pygame.sprite.Sprite):
     def __init__(self, speedxRondins=0):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((60, 60))
-        self.image.fill((255, 0, 255))
+        self.frog = pygame.image.load('frogger.png')
+        self.image = self.frog.convert_alpha()
+        self.image.set_colorkey((255, 255, 255))
+
         self.rect = self.image.get_rect()
         self.rect.centerx = 1000 / 2
         self.rect.bottom = 700 - 20
@@ -71,6 +96,7 @@ class Player(pygame.sprite.Sprite):
         self.Down = True
         self.score = 0
         self.invincible = False
+        self.sound = pygame.mixer.Sound('Jump.wav')
 
     def update(self):
         self.speedx = 0
@@ -80,6 +106,7 @@ class Player(pygame.sprite.Sprite):
 
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
+                self.sound.play()
                 self.invincible = False
                 if event.key == pygame.K_LEFT:
                     self.speedx = -100
@@ -210,13 +237,18 @@ class Decors:
     def __init__(self, assets, all_sprites, WaterS, boosts):
         self.decors = [assets.grass, assets.grass, assets.grass,  assets.road1, assets.road2, assets.water, assets.water2, assets.grass, assets.road1, assets.road2, assets.road1, assets.road2, assets.grass, assets.grass]
         self.tiles = [assets.grass, assets.road1, assets.road2, assets.water, assets.water2]
-        self.water_sprites = [(Water(assets, 600)), (Water(assets, 500))]
-        self.boosts = []
+        self.water_sprites = [(Water(assets, 500)), (Water(assets, 600))]
+
+
         all_sprites.add(self.water_sprites[0])
         WaterS.add(self.water_sprites[0])
-
         all_sprites.add(self.water_sprites[1])
         WaterS.add(self.water_sprites[1])
+        self.boosts = []
+
+        self.boosts.append(Boost(assets, 500, 100))
+        all_sprites.add(self.boosts[0])
+        boosts.add(self.boosts[0])
 
         self.num = 0
 
@@ -270,10 +302,11 @@ class Decors:
             WaterS.remove(self.water_sprites[0])
             del self.water_sprites[0]
 
-        if self.decors[-1] == assets.grass:
-            self.boosts.append(Boost(assets, randint(0, 100) * 10, ((len(self.decors) - 1) * 100) - 50))
-            all_sprites.add(self.boosts[-1])
-            boosts.add(self.boosts[-1])
+        if self.decors[-1] == assets.grass or self.decors[-1] == assets.road2 or self.decors[-1] == assets.road1:
+            if randint(0,7) == 0:
+                self.boosts.append(Boost(assets, randint(0, 100) * 10, ((len(self.decors) - 1) * 100) - 50))
+                all_sprites.add(self.boosts[-1])
+                boosts.add(self.boosts[-1])
 
         del self.decors[0]
 
@@ -282,19 +315,20 @@ class Generate:
         self.rondins = []
         self.cars = []
         self.motos = []
+        self.game_over = []
 
     def update(self, assets, dec, vehicles, all_sprites, waterobjects, WaterS):
 
         for self.t in range(len(dec.decors)):
             if dec.decors[self.t] == assets.road1 or dec.decors[self.t] == assets.road2:
 
-                if randint(0, 1000) == 0:
+                if randint(0, 200) == 0:
                     self.cars.append(Car(assets, self.t * 100))
                     pygame.sprite.spritecollide(self.cars[-1], all_sprites, dokill=True)
                     all_sprites.add(self.cars[-1])
                     vehicles.add(self.cars[-1])
 
-                if randint(0, 1000) == 0:
+                if randint(0, 200) == 0:
                     self.motos.append(Moto(assets, self.t * 100))
                     pygame.sprite.spritecollide(self.motos[-1], all_sprites, dokill=True)
                     all_sprites.add(self.motos[-1])
@@ -357,26 +391,29 @@ class Move:
                 self.b.rect.y += 100
 
 class Score:
-    def __init__(self, myfont):
-        self.score = 0
-        self.scoreD = myfont.render('0', False, (0, 255, 0))
+    def __init__(self, assets):
 
-    def update(self, player, myfont):
+        self.score = 0
+        self.scoreD = assets.myfont.render('0', False, (0, 255, 0))
+
+    def update(self, player, assets):
 
         if player.score != self.score:
             self.score = player.score
-            self.scoreD = myfont.render(str(self.score), False, (0, 255, 0))
+            self.scoreD = assets.myfont.render(str(self.score), False, (0, 255, 0))
 
         if player.invincible:
-            self.invin = myfont.render('Invincible', False, (255, 0, 0))
+            self.invin = assets.myfont.render('Invincible', False, (255, 0, 0))
+
 
 
 class Boost(pygame.sprite.Sprite):
     def __init__(self, assets, x, y, boost=None):
 
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((30, 30))
-        self.image.fill((255, 0, 0))
+        self.image = pygame.image.load('fly.png')
+        self.image.convert()
+        self.image.set_colorkey((255, 255, 255))
         self.rect = self.image.get_rect()
         self.rect.centerx = 15 + x
         self.rect.bottom = 700 - y
@@ -385,18 +422,20 @@ class Boost(pygame.sprite.Sprite):
 
 
 def main():
-    pygame.init()
-    pygame.font.init()
-    myfont = pygame.font.SysFont('liberationsans', 90)
-    myfont2 = pygame.font.SysFont('liberationsans', 60)
 
     screen = pygame.display.set_mode((1000, 700))
 
-    global speedxRondins
-    speedxRondins = 0
-
     assets = Assets()
     assets.load_assets()
+
+    assets.theme_sound.set_volume(0.4)
+    assets.theme_sound.play(-1)
+
+    die = [assets.pepe_die1, assets.pepe_die2, assets.pepe_die3]
+    ran_die = random.choice(die)
+
+    global speedxRondins
+    speedxRondins = 0
 
     all_sprites = pygame.sprite.Group()
     WaterS = pygame.sprite.Group()
@@ -411,7 +450,7 @@ def main():
     all_sprites.add(player)
     playerG.add(player)
 
-    score = Score(myfont)
+    score = Score(assets)
 
     dead = []
 
@@ -439,17 +478,10 @@ def main():
             dec.update(assets, all_sprites, WaterS, boosts)
             bg.update(assets, screen, dec.decors, score, player)
 
-        if on_rondin:
-            speedxRondins = on_rondin[0].speedx
-            ti = pygame.time.get_ticks()
-
-        else:
-            speedxRondins = 0
-            if pygame.time.get_ticks() - ti > 10:
-                deadW = pygame.sprite.spritecollide(player, WaterS, dokill=False)
-                on_rondin = []
-
         if boosted:
+
+            assets.boost_sound.play()
+
             if player.rect.y == 620:
                 z = 3
                 player.rect.y -= 200
@@ -469,18 +501,34 @@ def main():
             player.invincible = True
 
 
+        if on_rondin:
+            speedxRondins = on_rondin[0].speedx
+            ti = pygame.time.get_ticks()
+            on_rondin = []
+
+        else:
+            speedxRondins = 0
+            if pygame.time.get_ticks() - ti > 10:
+                deadW = pygame.sprite.spritecollide(player, WaterS, dokill=False)
+                on_rondin = []
+
         if dead or deadW:
-            if player.invincible == False:
+            if not player.invincible:
+                assets.theme_sound.stop()
+                assets.gameover_sound.play()
                 all_sprites.remove(player)
                 playerG.remove(player)
                 done = True
-
+            else:
+                dead = []
+                deadW = []
 
         gen.update(assets, dec, vehicles, all_sprites, waterobjects, WaterS)
         all_sprites.update()
         all_sprites.draw(screen)
         playerG.draw(screen)
-        score.update(player, myfont)
+        score.update(player, assets)
+
 
         pygame.display.update()
         clock.tick(60)
@@ -488,7 +536,6 @@ def main():
         if done:
             scoretxt = open('score.txt', 'r')
             bestscore = scoretxt.readlines()[1]
-            print bestscore
             scoretxt.close()
 
             scoretxt = open('score.txt','w')
@@ -499,7 +546,8 @@ def main():
                 scoretxt.write(str(int(bestscore)))
             scoretxt.close()
 
-            screen.blit(myfont2.render('GAME OVER', False, (255, 0, 0)), (300, 300))
+            screen.blit(assets.myfont2.render('GAME OVER', False, (255, 0, 0)), (300, 100))
+            screen.blit(ran_die, (350, 220))
             pygame.display.update()
             while True:
                 for event in pygame.event.get():
